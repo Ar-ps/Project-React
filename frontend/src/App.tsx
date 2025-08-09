@@ -37,7 +37,7 @@ function App() {
         <Route path="/about" element={<About />} />
         <Route path="/checkout" element={<Checkout />} />
         <Route path="/shopping-cart" element={<ShoppingCart />} />
-        <Route path="/blog-details" element={<BlogDetails />} />
+        <Route path="/blog/:id" element={<BlogDetails />} /> {/* ← route dinamis */}
         <Route path="/shop-details" element={<ShopDetail />} />
       </Routes>
     </Router>

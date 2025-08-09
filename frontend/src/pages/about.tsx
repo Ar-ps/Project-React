@@ -1,30 +1,8 @@
+import { Link } from 'react-router-dom';
+
 const about = () => {
     return (
         <>
-        <meta charSet="UTF-8" />
-        <meta name="description" content="Male_Fashion Template" />
-        <meta name="keywords" content="Male_Fashion, unica, creative, html" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <meta httpEquiv="X-UA-Compatible" content="ie=edge" />
-        <title>Male-Fashion | Template</title>
-        {/* Google Font */}
-        <link
-          href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@300;400;600;700;800;900&display=swap"
-          rel="stylesheet"
-        />
-        {/* Css Styles */}
-        <link rel="stylesheet" href="css/bootstrap.min.css" type="text/css" />
-        <link rel="stylesheet" href="css/font-awesome.min.css" type="text/css" />
-        <link rel="stylesheet" href="css/elegant-icons.css" type="text/css" />
-        <link rel="stylesheet" href="css/magnific-popup.css" type="text/css" />
-        <link rel="stylesheet" href="css/nice-select.css" type="text/css" />
-        <link rel="stylesheet" href="css/owl.carousel.min.css" type="text/css" />
-        <link rel="stylesheet" href="css/slicknav.min.css" type="text/css" />
-        <link rel="stylesheet" href="css/style.css" type="text/css" />
-        {/* Page Preloder */}
-        <div id="preloder">
-          <div className="loader" />
-        </div>
         {/* Offcanvas Menu Begin */}
         <div className="offcanvas-menu-overlay" />
         <div className="offcanvas-menu-wrapper">
@@ -106,36 +84,36 @@ const about = () => {
                 <nav className="header__menu mobile-menu">
                   <ul>
                     <li>
-                      <a href="./index.html">Home</a>
+                      <Link to="/">Home</Link>
                     </li>
                     <li>
-                      <a href="./shop.html">Shop</a>
+                      <Link to="/shop">Shop</Link>
                     </li>
                     <li>
-                      <a href="#">Pages</a>
+                      <Link to="/about">Pages</Link>
                       <ul className="dropdown">
                         <li>
-                          <a href="./about.html">About Us</a>
+                          <Link to="/about">About Us</Link>
                         </li>
                         <li>
-                          <a href="./shop-details.html">Shop Details</a>
+                          <Link to="/shop-details">Shop Details</Link>
                         </li>
                         <li>
-                          <a href="./shopping-cart.html">Shopping Cart</a>
+                          <Link to="/shopping-cart">Shopping Cart</Link>
                         </li>
                         <li>
-                          <a href="./checkout.html">Check Out</a>
+                          <Link to="/checkout">Check Out</Link>
                         </li>
                         <li>
-                          <a href="./blog-details.html">Blog Details</a>
+                          <Link to="/blog-details">Blog Details</Link>
                         </li>
                       </ul>
                     </li>
                     <li className="active">
-                      <a href="./blog.html">Blog</a>
+                      <Link to="/blog">Blog</Link>
                     </li>
                     <li>
-                      <a href="./contact.html">Contacts</a>
+                      <Link to="/contact">Contacts</Link>
                     </li>
                   </ul>
                 </nav>
@@ -169,8 +147,8 @@ const about = () => {
                 <div className="breadcrumb__text">
                   <h4>About Us</h4>
                   <div className="breadcrumb__links">
-                    <a href="./index.html">Home</a>
-                    <span>About Us</span>
+                    <Link to="/">Home</Link>
+                    <Link to="/about">About Us</Link>
                   </div>
                 </div>
               </div>

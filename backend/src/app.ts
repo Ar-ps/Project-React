@@ -4,7 +4,9 @@ import productRoutes from './routes/productRoutes';
 
 const app = express();
 
-app.use(cors());
+app.use(cors({
+  origin: 'http://localhost:5173', // alamat frontend kamu
+}));
 app.use(express.json());
 app.use('/api/products', productRoutes);
 

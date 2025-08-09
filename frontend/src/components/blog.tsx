@@ -1,30 +1,34 @@
+import { Link } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import axios from 'axios';
+
+interface Blog {
+    id: number;
+    title: string;
+    content: string;
+    image: string;
+    createdAt: string;
+    updatedAt: string;
+  }
+  
 const Blog = () => {
+    const [blogs, setBlogs] = useState<Blog[]>([]);
+  
+    useEffect(() => {
+      const fetchBlogs = async () => {
+        try {
+          const response = await axios.get<Blog[]>('http://localhost:5000/api/blogs');
+          setBlogs(response.data);
+        } catch (error) {
+          console.error('Gagal mengambil data blog:', error);
+        }
+      };
+  
+      fetchBlogs();
+    }, []);
+  
     return (
         <>
-        <meta charSet="UTF-8" />
-        <meta name="description" content="Male_Fashion Template" />
-        <meta name="keywords" content="Male_Fashion, unica, creative, html" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <meta httpEquiv="X-UA-Compatible" content="ie=edge" />
-        <title>Male-Fashion | Template</title>
-        {/* Google Font */}
-        <link
-          href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@300;400;600;700;800;900&display=swap"
-          rel="stylesheet"
-        />
-        {/* Css Styles */}
-        <link rel="stylesheet" href="css/bootstrap.min.css" type="text/css" />
-        <link rel="stylesheet" href="css/font-awesome.min.css" type="text/css" />
-        <link rel="stylesheet" href="css/elegant-icons.css" type="text/css" />
-        <link rel="stylesheet" href="css/magnific-popup.css" type="text/css" />
-        <link rel="stylesheet" href="css/nice-select.css" type="text/css" />
-        <link rel="stylesheet" href="css/owl.carousel.min.css" type="text/css" />
-        <link rel="stylesheet" href="css/slicknav.min.css" type="text/css" />
-        <link rel="stylesheet" href="css/style.css" type="text/css" />
-        {/* Page Preloder */}
-        <div id="preloder">
-          <div className="loader" />
-        </div>
         {/* Offcanvas Menu Begin */}
         <div className="offcanvas-menu-overlay" />
         <div className="offcanvas-menu-wrapper">
@@ -106,36 +110,36 @@ const Blog = () => {
                 <nav className="header__menu mobile-menu">
                   <ul>
                     <li>
-                      <a href="./index.html">Home</a>
+                      <Link to="/">Home</Link>
                     </li>
                     <li>
-                      <a href="./shop.html">Shop</a>
+                      <Link to="/shop">Shop</Link>
                     </li>
                     <li>
-                      <a href="#">Pages</a>
+                      <Link to="/about">Pages</Link>
                       <ul className="dropdown">
                         <li>
-                          <a href="./about.html">About Us</a>
+                          <Link to="/about">About Us</Link>
                         </li>
                         <li>
-                          <a href="./shop-details.html">Shop Details</a>
+                          <Link to="/shop-details">Shop Details</Link>
                         </li>
                         <li>
-                          <a href="./shopping-cart.html">Shopping Cart</a>
+                          <Link to="/shopping-cart">Shopping Cart</Link>
                         </li>
                         <li>
-                          <a href="./checkout.html">Check Out</a>
+                          <Link to="/checkout">Check Out</Link>
                         </li>
                         <li>
-                          <a href="./blog-details.html">Blog Details</a>
+                          <Link to="/blog-details">Blog Details</Link>
                         </li>
                       </ul>
                     </li>
                     <li className="active">
-                      <a href="./blog.html">Blog</a>
+                      <Link to="/blog">Blog</Link>
                     </li>
                     <li>
-                      <a href="./contact.html">Contacts</a>
+                      <Link to="/contact">Contacts</Link>
                     </li>
                   </ul>
                 </nav>
@@ -143,13 +147,13 @@ const Blog = () => {
               <div className="col-lg-3 col-md-3">
                 <div className="header__nav__option">
                   <a href="#" className="search-switch">
-                    <img src="img/icon/search.png" alt="" />
+                    <img src="assets/img/icon/search.png" alt="" />
                   </a>
                   <a href="#">
-                    <img src="img/icon/heart.png" alt="" />
+                    <img src="assets/img/icon/heart.png" alt="" />
                   </a>
                   <a href="#">
-                    <img src="img/icon/cart.png" alt="" /> <span>0</span>
+                    <img src="assets/img/icon/cart.png" alt="" /> <span>0</span>
                   </a>
                   <div className="price">$0.00</div>
                 </div>
@@ -164,7 +168,7 @@ const Blog = () => {
         {/* Breadcrumb Section Begin */}
         <section
           className="breadcrumb-blog set-bg"
-          data-setbg="img/breadcrumb-bg.jpg"
+          style={{ backgroundImage: `url("assets/img/breadcrumb-bg.jpg")` }}
         >
           <div className="container">
             <div className="row">
@@ -179,143 +183,32 @@ const Blog = () => {
         <section className="blog spad">
           <div className="container">
             <div className="row">
-              <div className="col-lg-4 col-md-6 col-sm-6">
-                <div className="blog__item">
-                  <div
-                    className="blog__item__pic set-bg"
-                    data-setbg="img/blog/blog-1.jpg"
-                  />
-                  <div className="blog__item__text">
-                    <span>
-                      <img src="img/icon/calendar.png" alt="" /> 16 February 2020
-                    </span>
-                    <h5>What Curling Irons Are The Best Ones</h5>
-                    <a href="#">Read More</a>
-                  </div>
+              {blogs.length > 0 ? (
+                blogs.slice(0, 10).map((blog, index) => (
+                  <div className="col-lg-4 col-md-6 col-sm-6" key={blog.id ?? index}>
+                    <div className="blog__item">
+              <div
+                className="blog__item__pic set-bg"
+                style={{
+                  backgroundImage: `url(${blog.image ?? '/assets/img/default.jpg'})`,
+                }}
+              />
+              <div className="blog__item__text">
+                <span>
+                  <img src="/assets/img/icon/calendar.png" alt="" />{" "}
+                  {new Date(blog.createdAt ?? "").toLocaleDateString("en-GB")}
+                </span>
+                <h5>{blog.title}</h5>
+                <Link to={`/blog/${blog.id}`}>Read More</Link>
                 </div>
-              </div>
-              <div className="col-lg-4 col-md-6 col-sm-6">
-                <div className="blog__item">
-                  <div
-                    className="blog__item__pic set-bg"
-                    data-setbg="img/blog/blog-2.jpg"
-                  />
-                  <div className="blog__item__text">
-                    <span>
-                      <img src="img/icon/calendar.png" alt="" /> 21 February 2020
-                    </span>
-                    <h5>Eternity Bands Do Last Forever</h5>
-                    <a href="#">Read More</a>
-                  </div>
-                </div>
-              </div>
-              <div className="col-lg-4 col-md-6 col-sm-6">
-                <div className="blog__item">
-                  <div
-                    className="blog__item__pic set-bg"
-                    data-setbg="img/blog/blog-3.jpg"
-                  />
-                  <div className="blog__item__text">
-                    <span>
-                      <img src="img/icon/calendar.png" alt="" /> 28 February 2020
-                    </span>
-                    <h5>The Health Benefits Of Sunglasses</h5>
-                    <a href="#">Read More</a>
-                  </div>
-                </div>
-              </div>
-              <div className="col-lg-4 col-md-6 col-sm-6">
-                <div className="blog__item">
-                  <div
-                    className="blog__item__pic set-bg"
-                    data-setbg="img/blog/blog-4.jpg"
-                  />
-                  <div className="blog__item__text">
-                    <span>
-                      <img src="img/icon/calendar.png" alt="" /> 16 February 2020
-                    </span>
-                    <h5>Aiming For Higher The Mastopexy</h5>
-                    <a href="#">Read More</a>
-                  </div>
-                </div>
-              </div>
-              <div className="col-lg-4 col-md-6 col-sm-6">
-                <div className="blog__item">
-                  <div
-                    className="blog__item__pic set-bg"
-                    data-setbg="img/blog/blog-5.jpg"
-                  />
-                  <div className="blog__item__text">
-                    <span>
-                      <img src="img/icon/calendar.png" alt="" /> 21 February 2020
-                    </span>
-                    <h5>Wedding Rings A Gift For A Lifetime</h5>
-                    <a href="#">Read More</a>
-                  </div>
-                </div>
-              </div>
-              <div className="col-lg-4 col-md-6 col-sm-6">
-                <div className="blog__item">
-                  <div
-                    className="blog__item__pic set-bg"
-                    data-setbg="img/blog/blog-6.jpg"
-                  />
-                  <div className="blog__item__text">
-                    <span>
-                      <img src="img/icon/calendar.png" alt="" /> 28 February 2020
-                    </span>
-                    <h5>The Different Methods Of Hair Removal</h5>
-                    <a href="#">Read More</a>
-                  </div>
-                </div>
-              </div>
-              <div className="col-lg-4 col-md-6 col-sm-6">
-                <div className="blog__item">
-                  <div
-                    className="blog__item__pic set-bg"
-                    data-setbg="img/blog/blog-7.jpg"
-                  />
-                  <div className="blog__item__text">
-                    <span>
-                      <img src="img/icon/calendar.png" alt="" /> 16 February 2020
-                    </span>
-                    <h5>Hoop Earrings A Style From History</h5>
-                    <a href="#">Read More</a>
-                  </div>
-                </div>
-              </div>
-              <div className="col-lg-4 col-md-6 col-sm-6">
-                <div className="blog__item">
-                  <div
-                    className="blog__item__pic set-bg"
-                    data-setbg="img/blog/blog-8.jpg"
-                  />
-                  <div className="blog__item__text">
-                    <span>
-                      <img src="img/icon/calendar.png" alt="" /> 21 February 2020
-                    </span>
-                    <h5>Lasik Eye Surgery Are You Ready</h5>
-                    <a href="#">Read More</a>
-                  </div>
-                </div>
-              </div>
-              <div className="col-lg-4 col-md-6 col-sm-6">
-                <div className="blog__item">
-                  <div
-                    className="blog__item__pic set-bg"
-                    data-setbg="img/blog/blog-9.jpg"
-                  />
-                  <div className="blog__item__text">
-                    <span>
-                      <img src="img/icon/calendar.png" alt="" /> 28 February 2020
-                    </span>
-                    <h5>Lasik Eye Surgery Are You Ready</h5>
-                    <a href="#">Read More</a>
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
+        ))
+      ) : (
+        <p className="text-center w-100">Loading blogs...</p>
+      )}
+        </div>
+        </div>
         </section>
         {/* Blog Section End */}
         {/* Footer Section Begin */}
@@ -326,7 +219,7 @@ const Blog = () => {
                 <div className="footer__about">
                   <div className="footer__logo">
                     <a href="#">
-                      <img src="img/footer-logo.png" alt="" />
+                      <img src="/assets/img/footer-logo.png" alt="" />
                     </a>
                   </div>
                   <p>
@@ -334,7 +227,7 @@ const Blog = () => {
                     includes design.
                   </p>
                   <a href="#">
-                    <img src="img/payment.png" alt="" />
+                    <img src="/assets/img/payment.png" alt="" />
                   </a>
                 </div>
               </div>

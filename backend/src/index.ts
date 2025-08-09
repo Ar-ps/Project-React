@@ -1,23 +1,21 @@
 import express from 'express';
 import cors from 'cors';
-import productRoutes from './routes/productRoutes'; // jika ada
+import productRoutes from './routes/productRoutes';
+import { syncDb } from './models';
+import blogRoutes from './routes/blogRoutes';
 
 const app = express();
 const PORT = 5000;
 
-// Middleware
-app.use(cors());
+app.use(cors()); // ← AKTIFKAN CORS DI SINI
 app.use(express.json());
 
-// Route dasar
-app.get('/', (req, res) => {
-  res.send('API is running...');
-});
+app.use('/api/products', productRoutes);
+app.use('/api/blogs', blogRoutes);
 
-// Routes lainnya
-app.use('/api/products', productRoutes); // contoh jika kamu punya route
+// Inisialisasi database
+syncDb();
 
-// Jalankan server
 app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+  console.log(`🚀 Server ready at http://localhost:${PORT}`);
 });

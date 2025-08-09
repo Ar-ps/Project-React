@@ -1,8 +1,6 @@
-import mysql from 'mysql2';
+import { Sequelize } from 'sequelize';
 
-export const db = mysql.createConnection({
+export const sequelize = new Sequelize('male_fashion_db', 'root', '', {
   host: 'localhost',
-  user: 'root',
-  password: '', // ganti sesuai konfigurasi MySQL-mu
-  database: 'male_fashion_db',
+  dialect: 'mysql',
 });
