@@ -1,7 +1,7 @@
-// src/models/productModel.ts
 import { DataTypes, Model, Optional } from 'sequelize';
 import { sequelize } from '../config/db';
 import { Category } from './categoryModel';
+import { ProductImage } from './productImageModel';
 
 export interface ProductAttributes {
   id: number;
@@ -26,6 +26,7 @@ export class Product extends Model<ProductAttributes, ProductCreationAttributes>
 
   // Relasi
   public category?: Category;
+  public images?: ProductImage[]; // Relasi dengan ProductImage
 }
 
 Product.init(
@@ -49,3 +50,7 @@ Product.init(
     timestamps: false,
   }
 );
+
+// Definisikan relasi
+Product.hasMany(ProductImage, { foreignKey: 'product_id', as: 'images' });
+ProductImage.belongsTo(Product, { foreignKey: 'product_id' });

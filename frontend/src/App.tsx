@@ -21,7 +21,7 @@ import About from './pages/about';
 import Checkout from './pages/checkout';
 import ShoppingCart from './pages/shopping-cart';
 import BlogDetails from './pages/blog-details';
-import ShopDetail from './pages/shop-details';
+import ShopDetails from './pages/shop-details';
 
 function App() {
   return (
@@ -38,7 +38,7 @@ function App() {
         <Route path="/checkout" element={<Checkout />} />
         <Route path="/shopping-cart" element={<ShoppingCart />} />
         <Route path="/blog/:id" element={<BlogDetails />} /> {/* ← route dinamis */}
-        <Route path="/shop-details" element={<ShopDetail />} />
+        <Route path="/shop-details/:id" element={<ShopDetails />} />
       </Routes>
     </Router>
   );

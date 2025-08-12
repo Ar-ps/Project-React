@@ -12,10 +12,16 @@ interface Product {
   image: string;
   category: string;
   price: number;
+  description?: string | null; // ✅ kolom baru
   rating: number;
   label?: string; // Menjadikan 'label' opsional karena tidak selalu ada
 }
-
+interface BlogItem {
+  id: number;
+  title: string;
+  image: string;
+  createdAt: string;
+}
 const Home = () => {
   const slides = [
     {
@@ -52,6 +58,14 @@ const Home = () => {
   const filteredProducts = filter === 'all'
     ? products
     : products.filter((product) => product.category === filter);
+
+    const [blogs, setBlogs] = useState<BlogItem[]>([]);
+    useEffect(() => {
+      axios.get<BlogItem[]>('http://localhost:5000/api/blogs')
+        .then(res => setBlogs(res.data))
+        .catch(err => console.error('Error fetching blogs:', err));
+    }, []);
+    
   
   return (
   <>
@@ -478,66 +492,43 @@ const Home = () => {
   </section>
   {/* Instagram Section End */}
   {/* Latest Blog Section Begin */}
-  <section className="latest spad">
-    <div className="container">
-      <div className="row">
-        <div className="col-lg-12">
-          <div className="section-title">
-            <span>Latest News</span>
-            <h2>Fashion New Trends</h2>
-          </div>
-        </div>
-      </div>
-      <div className="row">
-        <div className="col-lg-4 col-md-6 col-sm-6">
-          <div className="blog__item">
-            <div
-              className="blog__item__pic set-bg"
-              style={{ backgroundImage: `url("/assets/img/blog/blog-1.jpg")` }}
-            />
-            <div className="blog__item__text">
-              <span>
-                <img src="/assets/img/icon/calendar.png" alt="" /> 16 February 2020
-              </span>
-              <h5>What Curling Irons Are The Best Ones</h5>
-              <a href="#">Read More</a>
-            </div>
-          </div>
-        </div>
-        <div className="col-lg-4 col-md-6 col-sm-6">
-          <div className="blog__item">
-            <div
-              className="blog__item__pic set-bg"
-              style={{ backgroundImage: `url("/assets/img/blog/blog-2.jpg")` }}
-            />
-            <div className="blog__item__text">
-              <span>
-                <img src="/assets/img/icon/calendar.png" alt="" /> 21 February 2020
-              </span>
-              <h5>Eternity Bands Do Last Forever</h5>
-              <a href="#">Read More</a>
-            </div>
-          </div>
-        </div>
-        <div className="col-lg-4 col-md-6 col-sm-6">
-          <div className="blog__item">
-            <div
-              className="blog__item__pic set-bg"
-              style={{ backgroundImage: `url("/assets/img/blog/blog-3.jpg")` }}
-            />
-            <div className="blog__item__text">
-              <span>
-                <img src="/assets/img/icon/calendar.png" alt="" /> 28 February 2020
-              </span>
-              <h5>The Health Benefits Of Sunglasses</h5>
-              <a href="#">Read More</a>
-            </div>
-          </div>
+<section className="latest spad">
+  <div className="container">
+    <div className="row">
+      <div className="col-lg-12">
+        <div className="section-title">
+          <span>Latest News</span>
+          <h2>Fashion New Trends</h2>
         </div>
       </div>
     </div>
-  </section>
-  {/* Latest Blog Section End */}
+
+    {/* Satu row saja, lalu map 3 item */}
+    <div className="row">
+      {blogs.slice(0, 3).map((b) => (
+        <div className="col-lg-4 col-md-6 col-sm-6" key={b.id}>
+          <div className="blog__item">
+            <div
+              className="blog__item__pic set-bg"
+              style={{
+                backgroundImage: `url(${b.image || '/assets/img/blog/blog-1.jpg'})`,
+              }}
+            />
+            <div className="blog__item__text">
+              <span>
+                <img src="/assets/img/icon/calendar.png" alt="" />{' '}
+                {b.createdAt ? new Date(b.createdAt).toLocaleDateString('en-GB') : ''}
+              </span>
+              <h5>{b.title}</h5>
+              <Link to={`/blog/${b.id}`}>Read More</Link>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>
+{/* Latest Blog Section End */}
   {/* Footer Section Begin */}
   <footer className="footer">
     <div className="container">

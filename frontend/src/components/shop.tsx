@@ -8,6 +8,7 @@ interface Product {
   name: string;
   image: string;
   price: number;
+  description?: string | null; // ✅ kolom baru
   rating: number;
   label: string | null;
   category: string;
@@ -121,19 +122,19 @@ useEffect(() => {
                 <a href="#">Pages</a>
                 <ul className="dropdown">
                   <li>
-                    <a href="./about.html">About Us</a>
+                    <Link to="/about">About Us</Link>
                   </li>
                   <li>
-                    <a href="./shop-details.html">Shop Details</a>
+                    <Link to="/shop-details">Shop Details</Link>
                   </li>
                   <li>
-                    <a href="./shopping-cart.html">Shopping Cart</a>
+                    <Link to="/shopping-cart">Shopping Cart</Link>
                   </li>
                   <li>
-                    <a href="./checkout.html">Check Out</a>
+                    <Link to="/checkout">Check Out</Link>
                   </li>
                   <li>
-                    <a href="./blog-details.html">Blog Details</a>
+                    <Link to="/blog-details">Blog Details</Link>
                   </li>
                 </ul>
               </li>
@@ -473,7 +474,9 @@ useEffect(() => {
           </ul>
         </div>
         <div className="product__item__text">
-          <h6>{product.name}</h6>
+        {/* Nama Produk klik juga ke details */}
+          <h6>
+            {product.name}</h6>
           <a href="#" className="add-cart">+ Add To Cart</a>
           <div className="rating">
             {Array.from({ length: 5 }).map((_, index) => (

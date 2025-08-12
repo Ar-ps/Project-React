@@ -1,6 +1,105 @@
-import { Link } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
+import { useEffect, useMemo, useState } from 'react';
+import axios from 'axios';
+
+type ProductImage = { id: number; url: string; sort_order?: number };
+const API_BASE = 'http://localhost:5000/api';
+
+type Product = {
+  id: number;
+  name: string;
+  image: string;
+  price: number;
+  description?: string | null;
+  rating: number;
+  label?: string | null;
+  category_id: number | null;
+  images?: ProductImage[]; // Gambar-gambar dari product_images
+};
+
 
 const ShopDetails = () => {
+  const { id } = useParams<{ id: string }>();
+  const productId = Number(id);
+
+  const [product, setProduct] = useState<Product | null>(null);
+  const [related, setRelated] = useState<Product[]>([]);
+  const [qty, setQty] = useState(1);
+  const [activeIdx, setActiveIdx] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState<string | null>(null);
+
+
+  useEffect(() => {
+    let ignore = false;
+
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        setErr(null);
+
+        // 1) Detail produk
+        const { data: p } = await axios.get<Product>(`${API_BASE}/products/${productId}`);
+        if (ignore) return;
+        setProduct(p);
+        setActiveIdx(0);
+
+        // 2) Related (dari kategori yang sama, exclude dirinya)
+        const { data: all } = await axios.get<Product[]>(`${API_BASE}/products`);
+        if (ignore) return;
+        const rel = all
+          .filter(x => x.id !== p.id && x.category_id != null && x.category_id === p.category_id)
+          .slice(0, 4);
+        setRelated(rel);
+      } catch (e: any) {
+        setErr(e?.response?.data?.message || 'Gagal mengambil data produk.');
+      } finally {
+        if (!ignore) setLoading(false);
+      }
+    };
+
+    if (!Number.isNaN(productId)) fetchData();
+    else {
+      setErr('ID produk tidak valid.');
+      setLoading(false);
+    }
+
+    return () => { ignore = true; };
+  }, [productId]);
+
+  // Susun array URL gambar: pakai product.images; fallback ke product.image
+  const imageUrls = useMemo(() => {
+    if (!product) return [];
+    if (product.images && product.images.length > 0) {
+      return [...product.images]
+        .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0) || a.id - b.id)
+        .map(im => im.url);  // Memastikan gambar diambil berdasarkan urutan
+    }
+    return [product.image]; // Menggunakan gambar utama jika tidak ada gambar tambahan
+  }, [product]);
+
+  const renderStars = (n: number) => {
+    const full = Math.max(0, Math.min(5, Math.round(n)));
+    const empty = 5 - full;
+    return (
+      <div className="rating">
+        {Array.from({ length: full }).map((_, i) => <i key={`f-${i}`} className="fa fa-star" />)}
+        {Array.from({ length: empty }).map((_, i) => <i key={`e-${i}`} className="fa fa-star-o" />)}
+        <span> - {full} / 5</span>
+      </div>
+    );
+  };
+
+  const price = !isNaN(Number(product?.price))
+  ? Number(product?.price).toFixed(2)
+  : '0.00'; // Default if price is not a valid number
+
+
+  if (loading) return <div className="container py-5">Memuat detail produk…</div>;
+  if (err) return <div className="container py-5 text-danger">{err}</div>;
+  if (!product) return <div className="container py-5">Produk tidak ditemukan.</div>;
+
+
     return (
         <>
         {/* Offcanvas Menu Begin */}
@@ -143,113 +242,66 @@ const ShopDetails = () => {
         <section className="shop-details">
           <div className="product__details__pic">
             <div className="container">
+              {/* Breadcrumb */}
               <div className="row">
                 <div className="col-lg-12">
                   <div className="product__details__breadcrumb">
                     <Link to="/">Home</Link>
                     <Link to="/shop">Shop</Link>
-                    <span>Product Details</span>
+                    <span>{product.name}</span>
                   </div>
                 </div>
               </div>
               <div className="row">
+              {/* Thumbnails */}
                 <div className="col-lg-3 col-md-3">
                   <ul className="nav nav-tabs" role="tablist">
-                    <li className="nav-item">
-                      <a
-                        className="nav-link active"
-                        data-toggle="tab"
-                        href="#tabs-1"
-                        role="tab"
-                      >
-                        <div
-                          className="product__thumb__pic set-bg"
-                          data-setbg="img/shop-details/thumb-1.png"
-                        ></div>
-                      </a>
+                  {imageUrls.map((src, idx) => (
+                    <li className="nav-item" key={`thumb-${idx}`}>
+                    <button
+                        type="button"
+                        className={`nav-link ${idx === activeIdx ? 'active' : ''}`}
+                        onClick={() => setActiveIdx(idx)}
+                        style={{ border: 'none', background: 'transparent', padding: 0, cursor: 'pointer' }}
+                    >
+                    <div
+                        className="product__thumb__pic set-bg"
+                        style={{
+                            backgroundImage: `url(${src})`,
+                            width: 90, height: 90, backgroundSize: 'cover',
+                            borderRadius: 8, border: idx === activeIdx ? '2px solid #333' : '1px solid #ddd'
+                        }}
+                       />
+                      </button>
                     </li>
-                    <li className="nav-item">
-                      <a
-                        className="nav-link"
-                        data-toggle="tab"
-                        href="#tabs-2"
-                        role="tab"
-                      >
-                        <div
-                          className="product__thumb__pic set-bg"
-                          data-setbg="img/shop-details/thumb-2.png"
-                        ></div>
-                      </a>
-                    </li>
-                    <li className="nav-item">
-                      <a
-                        className="nav-link"
-                        data-toggle="tab"
-                        href="#tabs-3"
-                        role="tab"
-                      >
-                        <div
-                          className="product__thumb__pic set-bg"
-                          data-setbg="img/shop-details/thumb-3.png"
-                        ></div>
-                      </a>
-                    </li>
-                    <li className="nav-item">
-                      <a
-                        className="nav-link"
-                        data-toggle="tab"
-                        href="#tabs-4"
-                        role="tab"
-                      >
-                        <div
-                          className="product__thumb__pic set-bg"
-                          data-setbg="img/shop-details/thumb-4.png"
-                        >
-                          <i className="fa fa-play" />
-                        </div>
-                      </a>
-                    </li>
-                  </ul>
+                    ))}
+                </ul>
                 </div>
+                {/* Gambar besar */}
                 <div className="col-lg-6 col-md-9">
                   <div className="tab-content">
                     <div className="tab-pane active" id="tabs-1" role="tabpanel">
                       <div className="product__details__pic__item">
-                        <img src="img/shop-details/product-big-2.png" alt="" />
-                      </div>
-                    </div>
-                    <div className="tab-pane" id="tabs-2" role="tabpanel">
-                      <div className="product__details__pic__item">
-                        <img src="img/shop-details/product-big-3.png" alt="" />
-                      </div>
-                    </div>
-                    <div className="tab-pane" id="tabs-3" role="tabpanel">
-                      <div className="product__details__pic__item">
-                        <img src="img/shop-details/product-big.png" alt="" />
-                      </div>
-                    </div>
-                    <div className="tab-pane" id="tabs-4" role="tabpanel">
-                      <div className="product__details__pic__item">
-                        <img src="img/shop-details/product-big-4.png" alt="" />
-                        <a
-                          href="https://www.youtube.com/watch?v=8PJ3_p7VqHw&list=RD8PJ3_p7VqHw&start_radio=1"
-                          className="video-popup"
-                        >
-                          <i className="fa fa-play" />
-                        </a>
+                        <img src={imageUrls[activeIdx]} alt={`${product.name} - ${activeIdx + 1}`} />
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
+              </div>{/* row */}
             </div>
           </div>
+          {/* Konten detail */}
           <div className="product__details__content">
             <div className="container">
               <div className="row d-flex justify-content-center">
                 <div className="col-lg-8">
                   <div className="product__details__text">
-                    <h4>Hooded thermal anorak</h4>
+                    <h4>{product.name}</h4>
+                    {renderStars(product.rating)}
+                    <h3>${Number(product.price).toFixed(2)}</h3>
+
+                    <p>{product.description ?? 'Deskripsi belum tersedia.'}</p>
+                    {/* Opsi contoh (statis). Kalau punya size/color di DB, tinggal render dari API */}
                     <div className="rating">
                       <i className="fa fa-star" />
                       <i className="fa fa-star" />
@@ -258,9 +310,6 @@ const ShopDetails = () => {
                       <i className="fa fa-star-o" />
                       <span> - 5 Reviews</span>
                     </div>
-                    <h3>
-                      $270.00 <span>70.00</span>
-                    </h3>
                     <p>
                       Coat with quilted lining and an adjustable hood. Featuring long
                       sleeves with adjustable cuff tabs, adjustable asymmetric hem
@@ -308,7 +357,12 @@ const ShopDetails = () => {
                     <div className="product__details__cart__option">
                       <div className="quantity">
                         <div className="pro-qty">
-                          <input type="text" defaultValue={1} />
+                        <input
+                            type="number"
+                            min={1}
+                            value={qty}
+                            onChange={(e) => setQty(Math.max(1, Number(e.target.value)))}
+                        />                        
                         </div>
                       </div>
                       <a href="#" className="primary-btn">
@@ -526,224 +580,50 @@ const ShopDetails = () => {
         {/* Shop Details Section End */}
         {/* Related Section Begin */}
         <section className="related spad">
-          <div className="container">
-            <div className="row">
-              <div className="col-lg-12">
-                <h3 className="related-title">Related Product</h3>
+    <div className="container">
+      <div className="row">
+        <div className="col-lg-12">
+          <h3 className="related-title">Related Product</h3>
+        </div>
+      </div>
+      <div className="row">
+        {related.map(product => (
+          <div
+            key={product.id}
+            className="col-lg-3 col-md-6 col-sm-6"
+          >
+            <div className="product__item">
+              <div
+                className="product__item__pic set-bg"
+                style={{ backgroundImage: `url(${product.image})` }}
+              >
+                {product.label && <span className="label">{product.label}</span>}
+                <ul className="product__hover">
+                  <li>
+                    <a href="#"><img src="img/icon/heart.png" alt="" /></a>
+                  </li>
+                  <li>
+                    <a href="#"><img src="img/icon/compare.png" alt="" /> <span>Compare</span></a>
+                  </li>
+                  <li>
+                    <a href="#"><img src="img/icon/search.png" alt="" /></a>
+                  </li>
+                </ul>
               </div>
+              <div className="product__item__text">
+                <h6>{product.name}</h6>
+                <a href="#" className="add-cart">+ Add To Cart</a>
+                <div className="rating">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <i key={i} className={i < product.rating ? "fa fa-star" : "fa fa-star-o"} />
+                  ))}
+                </div>
+                <h3>${price}</h3>
+                </div>
             </div>
-            <div className="row">
-              <div className="col-lg-3 col-md-6 col-sm-6 col-sm-6">
-                <div className="product__item">
-                  <div
-                    className="product__item__pic set-bg"
-                    data-setbg="img/product/product-1.jpg"
-                  >
-                    <span className="label">New</span>
-                    <ul className="product__hover">
-                      <li>
-                        <a href="#">
-                          <img src="img/icon/heart.png" alt="" />
-                        </a>
-                      </li>
-                      <li>
-                        <a href="#">
-                          <img src="img/icon/compare.png" alt="" />{" "}
-                          <span>Compare</span>
-                        </a>
-                      </li>
-                      <li>
-                        <a href="#">
-                          <img src="img/icon/search.png" alt="" />
-                        </a>
-                      </li>
-                    </ul>
-                  </div>
-                  <div className="product__item__text">
-                    <h6>Piqué Biker Jacket</h6>
-                    <a href="#" className="add-cart">
-                      + Add To Cart
-                    </a>
-                    <div className="rating">
-                      <i className="fa fa-star-o" />
-                      <i className="fa fa-star-o" />
-                      <i className="fa fa-star-o" />
-                      <i className="fa fa-star-o" />
-                      <i className="fa fa-star-o" />
-                    </div>
-                    <h5>$67.24</h5>
-                    <div className="product__color__select">
-                      <label htmlFor="pc-1">
-                        <input type="radio" id="pc-1" />
-                      </label>
-                      <label className="active black" htmlFor="pc-2">
-                        <input type="radio" id="pc-2" />
-                      </label>
-                      <label className="grey" htmlFor="pc-3">
-                        <input type="radio" id="pc-3" />
-                      </label>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="col-lg-3 col-md-6 col-sm-6 col-sm-6">
-                <div className="product__item">
-                  <div
-                    className="product__item__pic set-bg"
-                    data-setbg="img/product/product-2.jpg"
-                  >
-                    <ul className="product__hover">
-                      <li>
-                        <a href="#">
-                          <img src="img/icon/heart.png" alt="" />
-                        </a>
-                      </li>
-                      <li>
-                        <a href="#">
-                          <img src="img/icon/compare.png" alt="" />{" "}
-                          <span>Compare</span>
-                        </a>
-                      </li>
-                      <li>
-                        <a href="#">
-                          <img src="img/icon/search.png" alt="" />
-                        </a>
-                      </li>
-                    </ul>
-                  </div>
-                  <div className="product__item__text">
-                    <h6>Piqué Biker Jacket</h6>
-                    <a href="#" className="add-cart">
-                      + Add To Cart
-                    </a>
-                    <div className="rating">
-                      <i className="fa fa-star-o" />
-                      <i className="fa fa-star-o" />
-                      <i className="fa fa-star-o" />
-                      <i className="fa fa-star-o" />
-                      <i className="fa fa-star-o" />
-                    </div>
-                    <h5>$67.24</h5>
-                    <div className="product__color__select">
-                      <label htmlFor="pc-4">
-                        <input type="radio" id="pc-4" />
-                      </label>
-                      <label className="active black" htmlFor="pc-5">
-                        <input type="radio" id="pc-5" />
-                      </label>
-                      <label className="grey" htmlFor="pc-6">
-                        <input type="radio" id="pc-6" />
-                      </label>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="col-lg-3 col-md-6 col-sm-6 col-sm-6">
-                <div className="product__item sale">
-                  <div
-                    className="product__item__pic set-bg"
-                    data-setbg="img/product/product-3.jpg"
-                  >
-                    <span className="label">Sale</span>
-                    <ul className="product__hover">
-                      <li>
-                        <a href="#">
-                          <img src="img/icon/heart.png" alt="" />
-                        </a>
-                      </li>
-                      <li>
-                        <a href="#">
-                          <img src="img/icon/compare.png" alt="" />{" "}
-                          <span>Compare</span>
-                        </a>
-                      </li>
-                      <li>
-                        <a href="#">
-                          <img src="img/icon/search.png" alt="" />
-                        </a>
-                      </li>
-                    </ul>
-                  </div>
-                  <div className="product__item__text">
-                    <h6>Multi-pocket Chest Bag</h6>
-                    <a href="#" className="add-cart">
-                      + Add To Cart
-                    </a>
-                    <div className="rating">
-                      <i className="fa fa-star" />
-                      <i className="fa fa-star" />
-                      <i className="fa fa-star" />
-                      <i className="fa fa-star" />
-                      <i className="fa fa-star-o" />
-                    </div>
-                    <h5>$43.48</h5>
-                    <div className="product__color__select">
-                      <label htmlFor="pc-7">
-                        <input type="radio" id="pc-7" />
-                      </label>
-                      <label className="active black" htmlFor="pc-8">
-                        <input type="radio" id="pc-8" />
-                      </label>
-                      <label className="grey" htmlFor="pc-9">
-                        <input type="radio" id="pc-9" />
-                      </label>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="col-lg-3 col-md-6 col-sm-6 col-sm-6">
-                <div className="product__item">
-                  <div
-                    className="product__item__pic set-bg"
-                    data-setbg="img/product/product-4.jpg"
-                  >
-                    <ul className="product__hover">
-                      <li>
-                        <a href="#">
-                          <img src="img/icon/heart.png" alt="" />
-                        </a>
-                      </li>
-                      <li>
-                        <a href="#">
-                          <img src="img/icon/compare.png" alt="" />{" "}
-                          <span>Compare</span>
-                        </a>
-                      </li>
-                      <li>
-                        <a href="#">
-                          <img src="img/icon/search.png" alt="" />
-                        </a>
-                      </li>
-                    </ul>
-                  </div>
-                  <div className="product__item__text">
-                    <h6>Diagonal Textured Cap</h6>
-                    <a href="#" className="add-cart">
-                      + Add To Cart
-                    </a>
-                    <div className="rating">
-                      <i className="fa fa-star-o" />
-                      <i className="fa fa-star-o" />
-                      <i className="fa fa-star-o" />
-                      <i className="fa fa-star-o" />
-                      <i className="fa fa-star-o" />
-                    </div>
-                    <h5>$60.9</h5>
-                    <div className="product__color__select">
-                      <label htmlFor="pc-10">
-                        <input type="radio" id="pc-10" />
-                      </label>
-                      <label className="active black" htmlFor="pc-11">
-                        <input type="radio" id="pc-11" />
-                      </label>
-                      <label className="grey" htmlFor="pc-12">
-                        <input type="radio" id="pc-12" />
-                      </label>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+          </div>
+          ))}
+          </div>
           </div>
         </section>
         {/* Related Section End */}
