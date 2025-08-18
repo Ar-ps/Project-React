@@ -1,59 +1,67 @@
-// src/controllers/productController.ts
 import { Request, Response } from 'express';
-import { Product } from '../models/productModel';
-import { Category } from '../models/categoryModel';
-import { ProductImage } from '../models/productImageModel';
+import { Product, Category, ProductImage } from '../models';
 
+type JsonImage = { id: number; url: string; sort_order?: number };
 
-// Fungsi untuk mengambil semua produk
-export const getProducts = async (req: Request, res: Response) => {
+export const getProducts = async (_req: Request, res: Response) => {
   try {
-    const products = await Product.findAll();
-    res.json(products);
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch products' });
+    const rows = await Product.findAll();
+    res.json(rows);
+  } catch (error: any) {
+    console.error('getProducts error:', error?.message || error);
+    res.status(500).json({ message: 'Failed to fetch products' });
   }
 };
 
 export const getProductById = async (req: Request, res: Response) => {
   try {
-    const productId = req.params.id;
+    const id = Number(req.params.id);
+    if (Number.isNaN(id)) return res.status(400).json({ message: 'Invalid id' });
 
-    // Ambil data produk beserta gambar dari tabel product_images
-    const product = await Product.findByPk(productId, {
-      include: [
-        {
-          model: Category,
-          as: 'category',
-          attributes: ['name'],
-        },
-        {
-          model: ProductImage,
-          as: 'images', // Mengambil gambar-gambar terkait
-          attributes: ['url', 'sort_order'],
-          order: [['sort_order', 'ASC']], // Mengurutkan gambar berdasarkan sort_order
-        },
-      ],
-    });
+    // 1) Produk dulu
+    const prod = await Product.findByPk(id);
+    if (!prod) return res.status(404).json({ message: 'Product not found' });
 
-    if (!product) {
-      return res.status(404).json({ message: 'Product not found' });
+    // 2) Category (opsional)
+    let catName: string | null = null;
+    const catId = (prod as any).category_id ?? null;
+    if (catId) {
+      const cat = await Category.findByPk(catId, { attributes: ['id', 'name'] });
+      catName = (cat as any)?.name ?? null;
     }
 
-    // Format data produk dan gambar untuk dikirimkan ke frontend
-    const formattedProduct = {
-      id: product.id,
-      name: product.name,
-      image: product.image,  // Gambar utama produk
-      price: product.price,
-      rating: product.rating,
-      label: product.label,
-      category: product.category?.name || null,
-      images: product.images || [],  // Menyertakan gambar dari product_images
-    };
+    // 3) Images
+    const imgsRaw = await ProductImage.findAll({
+      where: { product_id: id },
+      order: [['sort_order', 'ASC'], ['id', 'ASC']],
+    });
+    const images: JsonImage[] = imgsRaw.map((r: any) => ({
+      id: r.id,
+      url: r.url ?? r.image ?? '',
+      sort_order: r.sort_order ?? undefined,
+    })).filter(im => im.url);
 
-    res.json(formattedProduct);
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch product' });
+    // 4) Payload final
+    const p: any = prod.toJSON();
+    res.json({
+      id: p.id,
+      name: p.name,
+      image: p.image,
+      price: Number(p.price),
+      description: p.description ?? null,
+      rating: Number(p.rating ?? 0),
+      label: p.label ?? null,
+      category_id: p.category_id ?? null,
+      category: catName,
+      images,
+    });
+  } catch (error: any) {
+    console.error('getProductById error:', {
+      name: error?.name,
+      message: error?.message,
+      sql: error?.sql,
+      stack: error?.stack,
+    });
+    res.status(500).json({ message: 'Failed to fetch product' });
   }
 };

@@ -462,11 +462,13 @@ useEffect(() => {
           <div className={`product__item ${product.label === 'Sale' ? 'sale' : ''}`}>
           <div className="product__item__pic">
           {product.label && <span className="label">{product.label}</span>}
+          <Link to={`/shop-details/${product.id}`}>
           <img
             src={product.image}
             alt={product.name}
             style={{ width: '100%', height: 'auto', objectFit: 'cover' }}
           />
+          </Link>
           <ul className="product__hover">
             <li><a href="#"><img src="/assets/img/icon/heart.png" alt="" /></a></li>
             <li><a href="#"><img src="/assets/img/icon/compare.png" alt="" /><span>Compare</span></a></li>

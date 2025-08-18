@@ -50,7 +50,3 @@ Product.init(
     timestamps: false,
   }
 );
-
-// Definisikan relasi
-Product.hasMany(ProductImage, { foreignKey: 'product_id', as: 'images' });
-ProductImage.belongsTo(Product, { foreignKey: 'product_id' });

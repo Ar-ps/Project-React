@@ -8,3 +8,4 @@ router.get('/', getProducts);  // Endpoint untuk mengambil semua produk
 router.get('/:id', getProductById); // Endpoint untuk mengambil produk berdasarkan ID
 
 export default router;
+
