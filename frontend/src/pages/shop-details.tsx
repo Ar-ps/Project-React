@@ -1,6 +1,6 @@
-import { Link, useParams, useNavigate } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { useEffect, useMemo, useState } from 'react';
-import axios, { AxiosError } from 'axios';
+import axios from 'axios';
 
 type ProductImage = { id: number; url: string; sort_order?: number };
 const API_BASE = 'http://localhost:5000/api';
@@ -14,17 +14,22 @@ type Product = {
   rating: number;
   label?: string | null;
   category_id: number | null;
-  images?: ProductImage[];
+  images?: ProductImage[]; // dari product_images
 };
+
+const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+const axiosAuth = axios.create({
+  baseURL: API_BASE,
+  headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+});
 
 const formatMoney = (n: number | string | null | undefined) =>
   new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' })
     .format(Number(n || 0));
 
 const ShopDetails = () => {
-  const navigate = useNavigate();
-  const params = useParams();
-  const productId = Number(params.id);
+  const { id } = useParams<{ id: string }>();
+  const productId = Number(id);
 
   const [product, setProduct] = useState<Product | null>(null);
   const [related, setRelated] = useState<Product[]>([]);
@@ -33,17 +38,6 @@ const ShopDetails = () => {
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
   const [err, setErr] = useState<string | null>(null);
-
-  // Buat axios instance setiap render (header token terbaru)
-  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-  const axiosAuth = useMemo(
-    () =>
-      axios.create({
-        baseURL: API_BASE,
-        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-      }),
-    [token]
-  );
 
   useEffect(() => {
     let ignore = false;
@@ -57,6 +51,7 @@ const ShopDetails = () => {
         const { data: p } = await axios.get<Product>(`${API_BASE}/products/${productId}`);
         if (ignore) return;
         setProduct(p);
+        setActiveIdx(0);
 
         // 2) Related (kategori sama, exclude dirinya)
         const { data: all } = await axios.get<Product[]>(`${API_BASE}/products`);
@@ -65,9 +60,6 @@ const ShopDetails = () => {
           .filter(x => x.id !== p.id && x.category_id != null && x.category_id === p.category_id)
           .slice(0, 4);
         setRelated(rel);
-
-        // Reset thumbnail index tiap ganti produk
-        setActiveIdx(0);
       } catch (e: any) {
         setErr(e?.response?.data?.message || 'Gagal mengambil data produk.');
       } finally {
@@ -84,7 +76,7 @@ const ShopDetails = () => {
     return () => { ignore = true; };
   }, [productId]);
 
-  // Array gambar untuk gallery
+  // Susun array URL gambar: pakai product.images; fallback ke product.image
   const imageUrls = useMemo(() => {
     if (!product) return [];
     if (product.images && product.images.length > 0) {
@@ -92,18 +84,14 @@ const ShopDetails = () => {
         .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0) || a.id - b.id)
         .map(im => im.url);
     }
-    return [product.image].filter(Boolean);
+    return [product.image];
   }, [product]);
 
-  // Jaga-jaga kalau activeIdx out of range
-  const safeActiveIdx = Math.min(Math.max(0, activeIdx), Math.max(0, imageUrls.length - 1));
-  const heroImage = imageUrls[safeActiveIdx] ?? '/assets/img/placeholder.png';
-
   const renderStars = (n: number) => {
-    const full = Math.max(0, Math.min(5, Math.round(n || 0)));
+    const full = Math.max(0, Math.min(5, Math.round(n)));
     const empty = 5 - full;
     return (
-      <div className="rating" aria-label={`Rating ${full} dari 5`}>
+      <div className="rating">
         {Array.from({ length: full }).map((_, i) => <i key={`f-${i}`} className="fa fa-star" />)}
         {Array.from({ length: empty }).map((_, i) => <i key={`e-${i}`} className="fa fa-star-o" />)}
         <span> - {full} / 5</span>
@@ -118,29 +106,20 @@ const ShopDetails = () => {
     try {
       setAdding(true);
 
+      // Kirim dua nama key (product_id & productId) agar kompatibel dengan backend mana pun
       const payload = {
-        product_id: product.id, // snake_case
-        productId: product.id,  // camelCase (biar kompatibel backend mana pun)
+        product_id: product.id,
+        productId: product.id,
         quantity: qty,
       };
 
       await axiosAuth.post('/cart/items', payload);
+
       alert(`Berhasil menambahkan ${product.name} (${qty}x) ke cart.`);
-      // Arahkan user ke cart? (opsional)
-      // navigate('/shopping-cart');
-    } catch (e) {
-      const ax = e as AxiosError<any>;
-      const status = ax.response?.status;
-      if (status === 401) {
-        alert('Silakan login terlebih dahulu.');
-        navigate('/login');
-      } else if (status === 404) {
-        // 404 biasanya karena route tidak match — beri hint
-        alert('Endpoint cart tidak ditemukan. Pastikan backend mount: app.use("/api/cart", cartRoutes) dan POST ke /api/cart/items.');
-      } else {
-        const msg = ax.response?.data?.message || ax.message || 'Gagal menambahkan ke cart.';
-        alert(msg);
-      }
+      // Opsional: bisa refresh mini-cart atau state global di sini
+    } catch (e: any) {
+      const msg = e?.response?.data?.message || e?.message || 'Gagal menambahkan ke cart.';
+      alert(msg);
     } finally {
       setAdding(false);
     }
@@ -172,9 +151,9 @@ const ShopDetails = () => {
           </div>
         </div>
         <div className="offcanvas__nav__option">
-          <button className="btn p-0" aria-label="Search">
+          <a href="#" className="search-switch">
             <img src="/assets/img/icon/search.png" alt="" />
-          </button>
+          </a>
           <Link to="/wishlist">
             <img src="/assets/img/icon/heart.png" alt="" />
           </Link>
@@ -252,9 +231,9 @@ const ShopDetails = () => {
             </div>
             <div className="col-lg-3 col-md-3">
               <div className="header__nav__option">
-                <button className="btn p-0" aria-label="Search">
+                <a href="#" className="search-switch">
                   <img src="/assets/img/icon/search.png" alt="" />
-                </button>
+                </a>
                 <Link to="/wishlist">
                   <img src="/assets/img/icon/heart.png" alt="" />
                 </Link>
@@ -294,17 +273,16 @@ const ShopDetails = () => {
                     <li className="nav-item" key={`thumb-${idx}`}>
                       <button
                         type="button"
-                        className={`nav-link ${idx === safeActiveIdx ? 'active' : ''}`}
+                        className={`nav-link ${idx === activeIdx ? 'active' : ''}`}
                         onClick={() => setActiveIdx(idx)}
                         style={{ border: 'none', background: 'transparent', padding: 0, cursor: 'pointer' }}
-                        aria-label={`Tampilkan gambar ${idx + 1}`}
                       >
                         <div
                           className="product__thumb__pic set-bg"
                           style={{
                             backgroundImage: `url(${src})`,
                             width: 90, height: 90, backgroundSize: 'cover',
-                            borderRadius: 8, border: idx === safeActiveIdx ? '2px solid #333' : '1px solid #ddd'
+                            borderRadius: 8, border: idx === activeIdx ? '2px solid #333' : '1px solid #ddd'
                           }}
                         />
                       </button>
@@ -317,7 +295,7 @@ const ShopDetails = () => {
                 <div className="tab-content">
                   <div className="tab-pane active" id="tabs-1" role="tabpanel">
                     <div className="product__details__pic__item">
-                      <img src={heroImage} alt={`${product.name} - ${safeActiveIdx + 1}`} />
+                      <img src={imageUrls[activeIdx]} alt={`${product.name} - ${activeIdx + 1}`} />
                     </div>
                   </div>
                 </div>
@@ -378,12 +356,8 @@ const ShopDetails = () => {
                   </div>
 
                   <div className="product__details__btns__option">
-                    <button className="btn btn-link p-0">
-                      <i className="fa fa-heart" /> add to wishlist
-                    </button>
-                    <button className="btn btn-link p-0">
-                      <i className="fa fa-exchange" /> Add To Compare
-                    </button>
+                    <a href="#"><i className="fa fa-heart" /> add to wishlist</a>
+                    <a href="#"><i className="fa fa-exchange" /> Add To Compare</a>
                   </div>
 
                   <div className="product__details__last__option">
@@ -400,7 +374,7 @@ const ShopDetails = () => {
               </div>
             </div>
 
-            {/* Tabs deskripsi bisa diteruskan seperti template asli */}
+            {/* Tabs deskripsi dibiarkan sama seperti sebelumnya */}
           </div>
         </div>
       </section>
@@ -420,8 +394,8 @@ const ShopDetails = () => {
                   >
                     {rp.label && <span className="label">{rp.label}</span>}
                     <ul className="product__hover">
-                      <li><button className="btn p-0"><img src="/assets/img/icon/heart.png" alt="" /></button></li>
-                      <li><button className="btn p-0"><img src="/assets/img/icon/compare.png" alt="" /> <span>Compare</span></button></li>
+                      <li><a href="#"><img src="/assets/img/icon/heart.png" alt="" /></a></li>
+                      <li><a href="#"><img src="/assets/img/icon/compare.png" alt="" /> <span>Compare</span></a></li>
                       <li><Link to={`/shop-details/${rp.id}`}><img src="/assets/img/icon/search.png" alt="" /></Link></li>
                     </ul>
                   </div>
@@ -443,8 +417,10 @@ const ShopDetails = () => {
       </section>
       {/* Related Section End */}
 
-      {/* Footer, Search, dll — biarkan sesuai template */}
-      <footer className="footer">{/* ... */}</footer>
+      {/* Footer, Search, dll — (tidak diubah) */}
+      <footer className="footer">
+        {/* ... footer original kamu ... */}
+      </footer>
 
       <div className="search-model">
         <div className="h-100 d-flex align-items-center justify-content-center">

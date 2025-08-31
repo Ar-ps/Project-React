@@ -12,9 +12,9 @@ app.use(cors()); // ← AKTIFKAN CORS DI SINI
 app.use(express.json());
 
 app.use('/api/products', productRoutes);
-app.use('/api/blogs', blogRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/orders', orderRoutes);
+app.use('/api/blogs', blogRoutes);
 
 // Inisialisasi database
 

@@ -9,6 +9,7 @@ import paymentRoutes from './routes/paymentRoutes';
 import './models';           // inisialisasi asosiasi SEKALI di sini
 import dotenv from 'dotenv';
 import { sequelize } from './config/db';
+import { checkout, listOrders } from './controllers/orderController';
 dotenv.config();
 
 const app = express();
@@ -24,6 +25,8 @@ app.use('/api/blogs', blogRoutes);
 app.use('/api/cart', cartRoutes);        // → /api/cart (GET), /api/cart/items (POST), dst.
 app.use('/api/orders', orderRoutes);     // '/', '/:id' dst
 app.use('/api/payments', paymentRoutes);
+app.post('/cart/checkout', checkout);
+app.get('/orders', listOrders);
 // (opsional) logger 404 biar ketahuan kalau path salah
 app.use((req, res) => {
   console.error('404:', req.method, req.originalUrl);
