@@ -1,30 +1,8 @@
+import { Link } from 'react-router-dom';
+
 const Contact = () => {
     return (
         <>
-        <meta charSet="UTF-8" />
-        <meta name="description" content="Male_Fashion Template" />
-        <meta name="keywords" content="Male_Fashion, unica, creative, html" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <meta httpEquiv="X-UA-Compatible" content="ie=edge" />
-        <title>Male-Fashion | Template</title>
-        {/* Google Font */}
-        <link
-          href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@300;400;600;700;800;900&display=swap"
-          rel="stylesheet"
-        />
-        {/* Css Styles */}
-        <link rel="stylesheet" href="css/bootstrap.min.css" type="text/css" />
-        <link rel="stylesheet" href="css/font-awesome.min.css" type="text/css" />
-        <link rel="stylesheet" href="css/elegant-icons.css" type="text/css" />
-        <link rel="stylesheet" href="css/magnific-popup.css" type="text/css" />
-        <link rel="stylesheet" href="css/nice-select.css" type="text/css" />
-        <link rel="stylesheet" href="css/owl.carousel.min.css" type="text/css" />
-        <link rel="stylesheet" href="css/slicknav.min.css" type="text/css" />
-        <link rel="stylesheet" href="css/style.css" type="text/css" />
-        {/* Page Preloder */}
-        <div id="preloder">
-          <div className="loader" />
-        </div>
         {/* Offcanvas Menu Begin */}
         <div className="offcanvas-menu-overlay" />
         <div className="offcanvas-menu-wrapper">
@@ -106,10 +84,10 @@ const Contact = () => {
                 <nav className="header__menu mobile-menu">
                   <ul>
                     <li>
-                      <a href="./index.html">Home</a>
+                      <Link to="/">Home</Link>
                     </li>
                     <li>
-                      <a href="./shop.html">Shop</a>
+                      <Link to="/shop">Shop</Link>
                     </li>
                     <li>
                       <a href="#">Pages</a>
@@ -132,10 +110,10 @@ const Contact = () => {
                       </ul>
                     </li>
                     <li>
-                      <a href="./blog.html">Blog</a>
+                      <Link to="/blog">Blog</Link>
                     </li>
                     <li className="active">
-                      <a href="./contact.html">Contacts</a>
+                      <Link to="/contact">Contacts</Link>
                     </li>
                   </ul>
                 </nav>

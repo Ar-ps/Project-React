@@ -1,37 +1,119 @@
+import { Link } from 'react-router-dom';
+import { useEffect, useMemo, useState } from 'react';
+import axios from 'axios';
+
+type Product = {
+  id: number;
+  name: string;
+  image: string; // URL atau path
+  price: number;
+};
+
+type CartItem = {
+  id: number;           // cart_items.id
+  cart_id: number;
+  product_id: number;
+  quantity: number;
+  unit_price: number;
+  product: Product;
+};
+
+type CartResponse = {
+  cartId: number;
+  items: CartItem[];
+  subtotal: number;
+  discount: number;
+  total: number;
+};
+
+const API = 'http://localhost:5000/api';
+
+const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+const axiosAuth = axios.create({
+  baseURL: API,
+  headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+});
+
+const formatMoney = (n: number) =>
+  new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(Number(n || 0));
+
 const ShoppingCart = () => {
+  const [cart, setCart] = useState<CartResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [applying, setApplying] = useState(false);
+  const [coupon, setCoupon] = useState('');
+
+  const itemCount = useMemo(
+    () => cart?.items.reduce((a, it) => a + it.quantity, 0) ?? 0,
+    [cart]
+  );
+
+  const loadCart = async () => {
+    try {
+      setLoading(true);
+      const { data } = await axiosAuth.get<CartResponse>('/cart');
+      setCart(data);
+    } catch (e: any) {
+      console.error('Failed to load cart', e?.response?.data || e?.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadCart();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const onUpdateQty = async (itemId: number, quantity: number) => {
+    if (quantity < 0) return;
+    try {
+      const { data } = await axiosAuth.patch<CartResponse>(`/cart/items/${itemId}`, { quantity });
+      setCart(data);
+    } catch (e: any) {
+      console.error('Failed to update qty', e?.response?.data || e?.message);
+    }
+  };
+
+  const onRemoveItem = async (itemId: number) => {
+    try {
+      const { data } = await axiosAuth.delete<CartResponse>(`/cart/items/${itemId}`);
+      setCart(data);
+    } catch (e: any) {
+      console.error('Failed to remove item', e?.response?.data || e?.message);
+    }
+  };
+
+  const onClearCart = async () => {
+    try {
+      const { data } = await axiosAuth.delete<CartResponse>('/cart/clear');
+      setCart(data);
+    } catch (e: any) {
+      console.error('Failed to clear cart', e?.response?.data || e?.message);
+    }
+  };
+
+  const onApplyCoupon = async (ev: React.FormEvent) => {
+    ev.preventDefault();
+    // Placeholder, backend contoh kita belum memproses kupon (discount = 0)
+    try {
+      setApplying(true);
+      // Implementasi kupon bisa di POST ke endpoint validasi khusus.
+      // Untuk sekarang re-load cart saja.
+      await loadCart();
+    } finally {
+      setApplying(false);
+    }
+  };
     return (
         <>
-        <meta charSet="UTF-8" />
-        <meta name="description" content="Male_Fashion Template" />
-        <meta name="keywords" content="Male_Fashion, unica, creative, html" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <meta httpEquiv="X-UA-Compatible" content="ie=edge" />
-        <title>Male-Fashion | Template</title>
-        {/* Google Font */}
-        <link
-          href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@300;400;600;700;800;900&display=swap"
-          rel="stylesheet"
-        />
-        {/* Css Styles */}
-        <link rel="stylesheet" href="css/bootstrap.min.css" type="text/css" />
-        <link rel="stylesheet" href="css/font-awesome.min.css" type="text/css" />
-        <link rel="stylesheet" href="css/elegant-icons.css" type="text/css" />
-        <link rel="stylesheet" href="css/magnific-popup.css" type="text/css" />
-        <link rel="stylesheet" href="css/nice-select.css" type="text/css" />
-        <link rel="stylesheet" href="css/owl.carousel.min.css" type="text/css" />
-        <link rel="stylesheet" href="css/slicknav.min.css" type="text/css" />
-        <link rel="stylesheet" href="css/style.css" type="text/css" />
-        {/* Page Preloder */}
-        <div id="preloder">
-          <div className="loader" />
-        </div>
         {/* Offcanvas Menu Begin */}
         <div className="offcanvas-menu-overlay" />
         <div className="offcanvas-menu-wrapper">
           <div className="offcanvas__option">
             <div className="offcanvas__links">
-              <a href="#">Sign in</a>
-              <a href="#">FAQs</a>
+              <Link to="/login">Sign in</Link>
+              <Link to="/faqs">FAQs</Link>
             </div>
             <div className="offcanvas__top__hover">
               <span>
@@ -48,13 +130,13 @@ const ShoppingCart = () => {
             <a href="#" className="search-switch">
               <img src="img/icon/search.png" alt="" />
             </a>
-            <a href="#">
-              <img src="img/icon/heart.png" alt="" />
-            </a>
-            <a href="#">
-              <img src="img/icon/cart.png" alt="" /> <span>0</span>
-            </a>
-            <div className="price">$0.00</div>
+            <Link to="/wishlist">
+            <img src="img/icon/heart.png" alt="" />
+            </Link>
+            <Link to="/shopping-cart">
+            <img src="img/icon/cart.png" alt="" /> <span>{itemCount}</span>
+          </Link>
+          <div className="price">{formatMoney(cart?.total ?? 0)}</div>
           </div>
           <div id="mobile-menu-wrap" />
           <div className="offcanvas__text">
@@ -75,8 +157,8 @@ const ShoppingCart = () => {
                 <div className="col-lg-6 col-md-5">
                   <div className="header__top__right">
                     <div className="header__top__links">
-                      <a href="#">Sign in</a>
-                      <a href="#">FAQs</a>
+                      <Link to="/login">Sign in</Link>
+                      <Link to="/faqs">FAQs</Link>
                     </div>
                     <div className="header__top__hover">
                       <span>
@@ -106,36 +188,36 @@ const ShoppingCart = () => {
                 <nav className="header__menu mobile-menu">
                   <ul>
                     <li>
-                      <a href="./index.html">Home</a>
+                      <Link to="/">Home</Link>
                     </li>
                     <li className="active">
-                      <a href="./shop.html">Shop</a>
+                      <Link to="/shop">Shop</Link>
                     </li>
                     <li>
-                      <a href="#">Pages</a>
+                      <Link to="/about">Pages</Link>
                       <ul className="dropdown">
                         <li>
-                          <a href="./about.html">About Us</a>
+                          <Link to="/about">About Us</Link>
                         </li>
                         <li>
-                          <a href="./shop-details.html">Shop Details</a>
+                          <Link to="/shop-details">Shop Details</Link>
                         </li>
                         <li>
-                          <a href="./shopping-cart.html">Shopping Cart</a>
+                          <Link to="/shopping-cart">Shopping Cart</Link>
                         </li>
                         <li>
-                          <a href="./checkout.html">Check Out</a>
+                          <Link to="/checkout">Check Out</Link>
                         </li>
                         <li>
-                          <a href="./blog-details.html">Blog Details</a>
+                          <Link to="/blog-details">Blog Details</Link>
                         </li>
                       </ul>
                     </li>
                     <li>
-                      <a href="./blog.html">Blog</a>
+                      <Link to="/blog">Blog</Link>
                     </li>
                     <li>
-                      <a href="./contact.html">Contacts</a>
+                      <Link to="/contact">Contacts</Link>
                     </li>
                   </ul>
                 </nav>
@@ -145,20 +227,20 @@ const ShoppingCart = () => {
                   <a href="#" className="search-switch">
                     <img src="img/icon/search.png" alt="" />
                   </a>
-                  <a href="#">
-                    <img src="img/icon/heart.png" alt="" />
-                  </a>
-                  <a href="#">
-                    <img src="img/icon/cart.png" alt="" /> <span>0</span>
-                  </a>
-                  <div className="price">$0.00</div>
-                </div>
+                  <Link to="/wishlist">
+                  <img src="img/icon/heart.png" alt="" />
+                </Link>
+                <Link to="/shopping-cart">
+                  <img src="img/icon/cart.png" alt="" /> <span>{itemCount}</span>
+                </Link>
+                <div className="price">{formatMoney(cart?.total ?? 0)}</div>
               </div>
             </div>
             <div className="canvas__open">
               <i className="fa fa-bars" />
             </div>
           </div>
+        </div>
         </header>
         {/* Header Section End */}
         {/* Breadcrumb Section Begin */}
@@ -169,8 +251,8 @@ const ShoppingCart = () => {
                 <div className="breadcrumb__text">
                   <h4>Shopping Cart</h4>
                   <div className="breadcrumb__links">
-                    <a href="./index.html">Home</a>
-                    <a href="./shop.html">Shop</a>
+                    <Link to="/">Home</Link>
+                    <Link to="/shop">Shop</Link>
                     <span>Shopping Cart</span>
                   </div>
                 </div>
@@ -179,154 +261,156 @@ const ShoppingCart = () => {
           </div>
         </section>
         {/* Breadcrumb Section End */}
-        {/* Shopping Cart Section Begin */}
-        <section className="shopping-cart spad">
-          <div className="container">
-            <div className="row">
-              <div className="col-lg-8">
-                <div className="shopping__cart__table">
-                  <table>
-                    <thead>
-                      <tr>
-                        <th>Product</th>
-                        <th>Quantity</th>
-                        <th>Total</th>
-                        <th />
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr>
-                        <td className="product__cart__item">
-                          <div className="product__cart__item__pic">
-                            <img src="img/shopping-cart/cart-1.jpg" alt="" />
+       {/* Shopping Cart Section Begin */}
+<section className="shopping-cart spad">
+  <div className="container">
+    {loading ? (
+      <p>Loading cart…</p>
+    ) : (
+      <div className="row">
+        <div className="col-lg-8">
+          <div className="shopping__cart__table">
+            <table>
+              <thead>
+                <tr>
+                  <th>Product</th>
+                  <th>Quantity</th>
+                  <th>Total</th>
+                  <th />
+                </tr>
+              </thead>
+              <tbody>
+                {cart?.items.length ? (
+                  cart.items.map((it) => (
+                    <tr key={it.id}>
+                      <td className="product__cart__item">
+                        <div className="product__cart__item__pic">
+                          <img
+                            src={it.product.image || '/assets/img/shopping-cart/cart-1.jpg'}
+                            alt={it.product.name}
+                            style={{ width: 90, height: 90, objectFit: 'cover' }}
+                          />
+                        </div>
+                        <div className="product__cart__item__text">
+                          <h6>{it.product.name}</h6>
+                          <h5>{formatMoney(it.unit_price)}</h5>
+                        </div>
+                      </td>
+
+                      <td className="quantity__item">
+                        <div className="quantity">
+                          <div className="pro-qty-2">
+                            <input
+                              type="number"
+                              min={0}
+                              value={it.quantity}
+                              onChange={(e) =>
+                                onUpdateQty(it.id, Math.max(0, Number(e.target.value)))
+                              }
+                              className="qty-input"
+                            />
                           </div>
-                          <div className="product__cart__item__text">
-                            <h6>T-shirt Contrast Pocket</h6>
-                            <h5>$98.49</h5>
-                          </div>
-                        </td>
-                        <td className="quantity__item">
-                          <div className="quantity">
-                            <div className="pro-qty-2">
-                              <input type="text" defaultValue={1} />
-                            </div>
-                          </div>
-                        </td>
-                        <td className="cart__price">$ 30.00</td>
-                        <td className="cart__close">
+                        </div>
+                      </td>
+                      <td className="cart__price">
+                        {formatMoney(Number(it.unit_price) * it.quantity)}
+                      </td>
+
+                      <td className="cart__close">
+                        <a
+                          href="#"
+                          onClick={(e) => { e.preventDefault(); onRemoveItem(it.id); }}
+                          className="text-danger"
+                          title="Remove"
+                        >
                           <i className="fa fa-close" />
-                        </td>
-                      </tr>
-                      <tr>
-                        <td className="product__cart__item">
-                          <div className="product__cart__item__pic">
-                            <img src="img/shopping-cart/cart-2.jpg" alt="" />
-                          </div>
-                          <div className="product__cart__item__text">
-                            <h6>Diagonal Textured Cap</h6>
-                            <h5>$98.49</h5>
-                          </div>
-                        </td>
-                        <td className="quantity__item">
-                          <div className="quantity">
-                            <div className="pro-qty-2">
-                              <input type="text" defaultValue={1} />
-                            </div>
-                          </div>
-                        </td>
-                        <td className="cart__price">$ 32.50</td>
-                        <td className="cart__close">
-                          <i className="fa fa-close" />
-                        </td>
-                      </tr>
-                      <tr>
-                        <td className="product__cart__item">
-                          <div className="product__cart__item__pic">
-                            <img src="img/shopping-cart/cart-3.jpg" alt="" />
-                          </div>
-                          <div className="product__cart__item__text">
-                            <h6>Basic Flowing Scarf</h6>
-                            <h5>$98.49</h5>
-                          </div>
-                        </td>
-                        <td className="quantity__item">
-                          <div className="quantity">
-                            <div className="pro-qty-2">
-                              <input type="text" defaultValue={1} />
-                            </div>
-                          </div>
-                        </td>
-                        <td className="cart__price">$ 47.00</td>
-                        <td className="cart__close">
-                          <i className="fa fa-close" />
-                        </td>
-                      </tr>
-                      <tr>
-                        <td className="product__cart__item">
-                          <div className="product__cart__item__pic">
-                            <img src="img/shopping-cart/cart-4.jpg" alt="" />
-                          </div>
-                          <div className="product__cart__item__text">
-                            <h6>Basic Flowing Scarf</h6>
-                            <h5>$98.49</h5>
-                          </div>
-                        </td>
-                        <td className="quantity__item">
-                          <div className="quantity">
-                            <div className="pro-qty-2">
-                              <input type="text" defaultValue={1} />
-                            </div>
-                          </div>
-                        </td>
-                        <td className="cart__price">$ 30.00</td>
-                        <td className="cart__close">
-                          <i className="fa fa-close" />
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-                <div className="row">
-                  <div className="col-lg-6 col-md-6 col-sm-6">
-                    <div className="continue__btn">
-                      <a href="#">Continue Shopping</a>
-                    </div>
-                  </div>
-                  <div className="col-lg-6 col-md-6 col-sm-6">
-                    <div className="continue__btn update__btn">
-                      <a href="#">
-                        <i className="fa fa-spinner" /> Update cart
-                      </a>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="col-lg-4">
-                <div className="cart__discount">
-                  <h6>Discount codes</h6>
-                  <form action="#">
-                    <input type="text" placeholder="Coupon code" />
-                    <button type="submit">Apply</button>
-                  </form>
-                </div>
-                <div className="cart__total">
-                  <h6>Cart total</h6>
-                  <ul>
-                    <li>
-                      Subtotal <span>$ 169.50</span>
-                    </li>
-                    <li>
-                      Total <span>$ 169.50</span>
-                    </li>
-                  </ul>
-                  <a href="#" className="primary-btn">
-                    Proceed to checkout
-                  </a>
-                </div>
+                        </a>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={4} style={{ textAlign: 'center' }}>
+                      Keranjang kosong. <Link to="/shop">Belanja sekarang</Link>.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="row">
+            <div className="col-lg-6 col-md-6 col-sm-6">
+              <div className="continue__btn">
+                <Link to="/shop">Continue Shopping</Link>
               </div>
             </div>
+            <div className="col-lg-6 col-md-6 col-sm-6">
+              <div className="continue__btn update__btn">
+                <a
+                  href="#"
+                  onClick={(e) => { e.preventDefault(); loadCart(); }}
+                >
+                  <i className="fa fa-spinner" /> Refresh cart
+                </a>
+              
+                {cart?.items.length ? (
+                  <a
+                    href="#"
+                    onClick={(e) => { e.preventDefault(); onClearCart(); }}
+                  >
+                    Clear cart
+                  </a>
+                ) : null}
+              </div>
+            </div>
+
           </div>
-        </section>
+        </div>
+          <div className="col-lg-4">
+            <div className="cart__discount">
+            <h6>Discount codes</h6>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                onApplyCoupon(e);
+              }}
+            >
+              <input
+                type="text"
+                placeholder="Coupon code"
+                value={coupon}
+                onChange={(e) => setCoupon(e.target.value)}
+              />
+              <button type="submit" disabled={applying}>
+                {applying ? 'Applying…' : 'Apply'}
+              </button>
+            </form>
+            </div>
+
+          <div className="cart__total">
+            <h6>Cart total</h6>
+            <ul>
+              <li>Subtotal <span>{formatMoney(cart?.subtotal ?? 0)}</span></li>
+              <li>Discount <span>{formatMoney(cart?.discount ?? 0)}</span></li>
+              <li>Total <span>{formatMoney(cart?.total ?? 0)}</span></li>
+            </ul>
+            {cart?.items.length ? (
+            <Link
+            to="/checkout"
+            state={{ cart }}
+            className="primary-btn"
+          >
+          Proceed to checkout
+          </Link>
+          ) : null   
+          }
+          </div>
+          </div>
+        </div>
+        )}
+        </div>
+        </section>     
         {/* Shopping Cart Section End */}
         {/* Footer Section Begin */}
         <footer className="footer">

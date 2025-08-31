@@ -1,8 +1,27 @@
 import { Swiper, SwiperSlide } from 'swiper/react';
 import 'swiper/swiper-bundle.css';
 import { Navigation, Pagination, Autoplay } from 'swiper/modules';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import axios from 'axios';
+import { Link } from 'react-router-dom';
 
+// Definisikan interface untuk tipe produk
+interface Product {
+  id: number;
+  name: string;
+  image: string;
+  category: string;
+  price: number;
+  description?: string | null; // ✅ kolom baru
+  rating: number;
+  label?: string; // Menjadikan 'label' opsional karena tidak selalu ada
+}
+interface BlogItem {
+  id: number;
+  title: string;
+  image: string;
+  createdAt: string;
+}
 const Home = () => {
   const slides = [
     {
@@ -23,81 +42,30 @@ const Home = () => {
     },
   ];
 
-  const products = [
-    {
-      id: 1,
-      name: 'Product 1',
-      image: '/assets/img/product/product-1.jpg',
-      category: 'best-sellers',
-      price: 67.24,
-      rating: 0,
-      label: 'New',
-    },
-    {
-      id: 2,
-      name: 'Product 2',
-      image: '/assets/img/product/product-2.jpg',
-      category: 'new-arrivals',
-      price: 67.24,
-      rating: 0,
-    },
-    {
-      id: 3,
-      name: 'Product 3',
-      image: '/assets/img/product/product-3.jpg',
-      category: 'hot-sales',
-      price: 43.48,
-      rating: 4,
-      label: 'Sale',
-    },
-    {
-      id: 4,
-      name: 'Product 4',
-      image: '/assets/img/product/product-4.jpg',
-      category: 'hot-sales',
-      price: 60.90,
-      rating: 0,
-    },
-    {
-      id: 5,
-      name: 'Product 5',
-      image: '/assets/img/product/product-5.jpg',
-      category: 'new-arrivals',
-      price: 31.37,
-      rating: 0,
-    },
-    {
-      id: 6,
-      name: 'Product 6',
-      image: '/assets/img/product/product-6.jpg',
-      category: 'hot-sales',
-      price: 98.49,
-      rating: 4,
-      label: 'Sale',
-    },
-    {
-      id: 7,
-      name: 'Product 7',
-      image: '/assets/img/product/product-7.jpg',
-      category: 'new-arrivals',
-      price: 49.66,
-      rating: 0,
-    },
-    {
-      id: 8,
-      name: 'Product 8',
-      image: '/assets/img/product/product-8.jpg',
-      category: 'hot-sales',
-      price: 26.28,
-      rating: 0,
-    },
-  ];
-
+  // Menggunakan state untuk menyimpan data produk dari API
+  const [products, setProducts] = useState<Product[]>([]);
   const [filter, setFilter] = useState<'all' | 'best-sellers' | 'new-arrivals' | 'hot-sales'>('all');
 
+  // Mengambil data dari backend saat komponen dimuat
+  useEffect(() => {
+    // Perbaikan: Menambahkan type assertion <Product[]> ke axios.get
+    axios.get<Product[]>('http://localhost:5000/api/products')
+      .then(res => setProducts(res.data))
+      .catch(err => console.error("Error fetching products:", err));
+  }, []); // [] memastikan hook hanya berjalan sekali setelah render pertama
+
+  // Logika filter tetap sama, menggunakan data dari state `products`
   const filteredProducts = filter === 'all'
     ? products
     : products.filter((product) => product.category === filter);
+
+    const [blogs, setBlogs] = useState<BlogItem[]>([]);
+    useEffect(() => {
+      axios.get<BlogItem[]>('http://localhost:5000/api/blogs')
+        .then(res => setBlogs(res.data))
+        .catch(err => console.error('Error fetching blogs:', err));
+    }, []);
+    
   
   return (
   <>
@@ -183,36 +151,36 @@ const Home = () => {
           <nav className="header__menu mobile-menu">
             <ul>
               <li className="active">
-                <a href="./index.html">Home</a>
+                <Link to="/">Home</Link>
               </li>
               <li>
-                <a href="./shop.html">Shop</a>
+                <Link to="/shop">Shop</Link>
               </li>
               <li>
-                <a href="#">Pages</a>
+                <Link to="/pages">Pages</Link>
                 <ul className="dropdown">
                   <li>
-                    <a href="./about.html">About Us</a>
+                    <Link to="/about">About Us</Link>
                   </li>
                   <li>
-                    <a href="./shop-details.html">Shop Details</a>
+                    <Link to="/shop-details">Shop Details</Link>
                   </li>
                   <li>
-                    <a href="./shopping-cart.html">Shopping Cart</a>
+                    <Link to="/shopping-cart">Shopping Cart</Link>
                   </li>
                   <li>
-                    <a href="./checkout.html">Check Out</a>
+                    <Link to="/checkout">Check Out</Link>
                   </li>
                   <li>
-                    <a href="./blog-details.html">Blog Details</a>
+                    <Link to="/blog-details">Blog Details</Link>
                   </li>
                 </ul>
               </li>
               <li>
-                <a href="./blog.html">Blog</a>
+                <Link to="/blog">Blog</Link>
               </li>
               <li>
-                <a href="./contact.html">Contacts</a>
+                <Link to="/contact">Contacts</Link>
               </li>
             </ul>
           </nav>
@@ -354,7 +322,7 @@ const Home = () => {
       </ul>
       </div>
       <div className="row product__filter">
-  {filteredProducts.map((product) => (
+    {filteredProducts.slice(0, 8).map((product) => (
     <div
       className={`col-lg-3 col-md-6 col-sm-6 mix ${product.category}`}
       key={product.id}
@@ -365,10 +333,10 @@ const Home = () => {
           style={{ backgroundImage: `url(${product.image})` }}
         >
           {/* Optional label, kamu bisa atur sesuai kebutuhan */}
-          {product.category === 'new-arrivals' && (
+          {product.label === 'New' && (
             <span className="label">New</span>
           )}
-          {product.category === 'hot-sales' && (
+          {product.label === 'Sale' && (
             <span className="label">Sale</span>
           )}
           <ul className="product__hover">
@@ -399,12 +367,12 @@ const Home = () => {
             {[...Array(5)].map((_, index) => (
              <i
               key={index}
-              className={`fa ${index < 3 ? 'fa-star' : 'fa-star-o'}`}
+              className={`fa ${index < product.rating ? 'fa-star' : 'fa-star-o'}`}
               style={{ color: '#ffc107', fontSize: '16px', marginRight: '2px' }}
             />
           ))}
           </div>
-          <h5>$49.99</h5> {/* Bisa ganti pakai product.price jika tersedia */}
+          <h5>${product.price}</h5>
           <div className="product__color__select">
             <label htmlFor={`pc-${product.id}-1`}>
               <input type="radio" id={`pc-${product.id}-1`} />
@@ -524,66 +492,43 @@ const Home = () => {
   </section>
   {/* Instagram Section End */}
   {/* Latest Blog Section Begin */}
-  <section className="latest spad">
-    <div className="container">
-      <div className="row">
-        <div className="col-lg-12">
-          <div className="section-title">
-            <span>Latest News</span>
-            <h2>Fashion New Trends</h2>
-          </div>
-        </div>
-      </div>
-      <div className="row">
-        <div className="col-lg-4 col-md-6 col-sm-6">
-          <div className="blog__item">
-            <div
-              className="blog__item__pic set-bg"
-              style={{ backgroundImage: `url("/assets/img/blog/blog-1.jpg")` }}
-            />
-            <div className="blog__item__text">
-              <span>
-                <img src="/assets/img/icon/calendar.png" alt="" /> 16 February 2020
-              </span>
-              <h5>What Curling Irons Are The Best Ones</h5>
-              <a href="#">Read More</a>
-            </div>
-          </div>
-        </div>
-        <div className="col-lg-4 col-md-6 col-sm-6">
-          <div className="blog__item">
-            <div
-              className="blog__item__pic set-bg"
-              style={{ backgroundImage: `url("/assets/img/blog/blog-2.jpg")` }}
-            />
-            <div className="blog__item__text">
-              <span>
-                <img src="/assets/img/icon/calendar.png" alt="" /> 21 February 2020
-              </span>
-              <h5>Eternity Bands Do Last Forever</h5>
-              <a href="#">Read More</a>
-            </div>
-          </div>
-        </div>
-        <div className="col-lg-4 col-md-6 col-sm-6">
-          <div className="blog__item">
-            <div
-              className="blog__item__pic set-bg"
-              style={{ backgroundImage: `url("/assets/img/blog/blog-3.jpg")` }}
-            />
-            <div className="blog__item__text">
-              <span>
-                <img src="/assets/img/icon/calendar.png" alt="" /> 28 February 2020
-              </span>
-              <h5>The Health Benefits Of Sunglasses</h5>
-              <a href="#">Read More</a>
-            </div>
-          </div>
+<section className="latest spad">
+  <div className="container">
+    <div className="row">
+      <div className="col-lg-12">
+        <div className="section-title">
+          <span>Latest News</span>
+          <h2>Fashion New Trends</h2>
         </div>
       </div>
     </div>
-  </section>
-  {/* Latest Blog Section End */}
+
+    {/* Satu row saja, lalu map 3 item */}
+    <div className="row">
+      {blogs.slice(0, 3).map((b) => (
+        <div className="col-lg-4 col-md-6 col-sm-6" key={b.id}>
+          <div className="blog__item">
+            <div
+              className="blog__item__pic set-bg"
+              style={{
+                backgroundImage: `url(${b.image || '/assets/img/blog/blog-1.jpg'})`,
+              }}
+            />
+            <div className="blog__item__text">
+              <span>
+                <img src="/assets/img/icon/calendar.png" alt="" />{' '}
+                {b.createdAt ? new Date(b.createdAt).toLocaleDateString('en-GB') : ''}
+              </span>
+              <h5>{b.title}</h5>
+              <Link to={`/blog/${b.id}`}>Read More</Link>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>
+{/* Latest Blog Section End */}
   {/* Footer Section Begin */}
   <footer className="footer">
     <div className="container">

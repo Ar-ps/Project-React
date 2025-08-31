@@ -1,18 +1,52 @@
-import { db } from '../config/db';
-import { Product } from '../types/product';
-import { RowDataPacket } from 'mysql2';
+import { DataTypes, Model, Optional } from 'sequelize';
+import { sequelize } from '../config/db';
+import { Category } from './categoryModel';
+import { ProductImage } from './productImageModel';
 
-export const getAllProducts = (callback: (err: any, results?: Product[]) => void) => {
-  db.query('SELECT * FROM products', (err, results) => {
-    if (err) return callback(err);
+export interface ProductAttributes {
+  id: number;
+  name: string;
+  image: string;
+  price: number;
+  rating: number;
+  label?: string;
+  category_id: number;
+}
 
-    const rows = results as RowDataPacket[]; // 👈 beri tahu TypeScript ini array
+interface ProductCreationAttributes extends Optional<ProductAttributes, 'id'> {}
 
-    const formatted = rows.map((row: any) => ({
-      ...row,
-      category: JSON.parse(row.category) // Jika category disimpan sebagai JSON string
-    }));
+export class Product extends Model<ProductAttributes, ProductCreationAttributes> implements ProductAttributes {
+  public id!: number;
+  public name!: string;
+  public image!: string;
+  public price!: number;
+  public rating!: number;
+  public label?: string;
+  public category_id!: number;
 
-    callback(null, formatted);
-  });
-};
+  // Relasi
+  public category?: Category;
+  public images?: ProductImage[]; // Relasi dengan ProductImage
+}
+
+Product.init(
+  {
+    id: {
+      type: DataTypes.INTEGER,
+      autoIncrement: true,
+      primaryKey: true,
+    },
+    name: { type: DataTypes.STRING, allowNull: false },
+    image: { type: DataTypes.STRING, allowNull: false },
+    price: { type: DataTypes.FLOAT, allowNull: false },
+    rating: { type: DataTypes.INTEGER, allowNull: false },
+    label: { type: DataTypes.STRING, allowNull: true },
+    category_id: { type: DataTypes.INTEGER, allowNull: true },
+  },
+  {
+    sequelize,
+    modelName: 'Product',
+    tableName: 'products',
+    timestamps: false,
+  }
+);

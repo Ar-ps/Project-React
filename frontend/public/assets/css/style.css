@@ -2397,6 +2397,8 @@ ol {
 	border: 1px solid #e1e1e1;
 	padding: 14px 35px;
 	display: inline-block;
+	margin-bottom: 16px; /* ⬅️ jarak bawah tombol atas */
+
 }
 
 .cart__discount {

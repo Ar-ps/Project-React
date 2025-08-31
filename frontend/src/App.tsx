@@ -10,6 +10,8 @@ import '../public/assets/css/owl.carousel.min.css';
 import '../public/assets/css/slicknav.min.css';
 import '../public/assets/css/style.css';
 
+
+
 // Import components
 import Home from './components/home';
 import Shop from './components/shop';
@@ -21,7 +23,14 @@ import About from './pages/about';
 import Checkout from './pages/checkout';
 import ShoppingCart from './pages/shopping-cart';
 import BlogDetails from './pages/blog-details';
-import ShopDetail from './pages/shop-details';
+import ShopDetails from './pages/shop-details';
+
+// Import admin components
+import AdminLayout from './admin/Layout';
+import Dashboard from './admin/Dashboard';
+import Products from './admin/Products';
+import Blogs from './admin/Blogs';
+import Orders from './admin/Orders';
 
 function App() {
   return (
@@ -37,8 +46,16 @@ function App() {
         <Route path="/about" element={<About />} />
         <Route path="/checkout" element={<Checkout />} />
         <Route path="/shopping-cart" element={<ShoppingCart />} />
-        <Route path="/blog-details" element={<BlogDetails />} />
-        <Route path="/shop-details" element={<ShopDetail />} />
+        <Route path="/blog/:id" element={<BlogDetails />} /> {/* ← route dinamis */}
+        <Route path="/shop-details/:id" element={<ShopDetails />} />
+
+        {/* Admin Side */}
+        <Route path="/admin" element={<AdminLayout />}>
+          <Route index element={<Dashboard />} />
+          <Route path="products" element={<Products />} />
+          <Route path="blogs" element={<Blogs />} />
+          <Route path="orders" element={<Orders />} />
+        </Route>
       </Routes>
     </Router>
   );

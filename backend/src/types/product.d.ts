@@ -1,10 +1,18 @@
+// types/product.ts
 export interface Product {
-    id?: number;
+    id: number;
     name: string;
     image: string;
     price: number;
+    description?: string | null; // ✅ kolom baru
     rating: number;
-    label?: string;
-    category: string[]; // kita simpan sebagai JSON di MySQL
+    label: string;
+    category_id: number;
+    images?: ProductImage[]; // ✅ kolom baru
+  
+    // relasi dari backend
+    category?: {
+      name: string;
+    };
   }
   
